@@ -1,14 +1,6 @@
 package TSTester;
 
-//import java.io.File;
-//import java.io.FileFilter;
-//import java.io.FileNotFoundException;
 import java.io.*;
-//import java.util.List;
-//import java.util.ArrayList;
-//import java.util.Arrays;
-//import java.util.Scanner;
-//import java.util.Random;
 import java.util.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -36,7 +28,6 @@ public class TSTester {
 		experimentType experiment = experimentType.unsorted;
 		boolean winPercent = false;
 		String bounds[] = {"none", "keogh", "improved", "enhanced5", "petitjean", "webb"};
-		String boundsForSorted[] = {"keogh", "improved", "enhanced5", "petitjean", "webb"};
 		String datasets[] = null;
 		String outName = ".";
 		String datasetDirectory = "UCR_TS_Archive_2015";
@@ -110,12 +101,10 @@ public class TSTester {
 					
 				case 's':
 					experiment = experimentType.sorted;
-					bounds = boundsForSorted;
 					break;
 					
 				case 't':
 					experiment = experimentType.testTightness;
-					bounds = boundsForSorted;
 					break;
 					
 				case 'w': 
