@@ -585,6 +585,8 @@ public class TSTester {
 	static void doNN(distance.BoundsID bound, int k, Dataset train, Dataset test, int w, boolean winPercent, experimentType sort, FileWriter timesStream, FileWriter timeStdStream, FileWriter accuracyStream, FileWriter prunedStream){
 		double uetest[] = null;
 		double letest[] = null;
+		double luetest[] = null;
+		double uletest[] = null;
 		//lb2[i] = new double[data.series.get(i).sequence.length];
 		//ub2[i] = new double[data.series.get(i).sequence.length];
 		//distance.Bounds.lemireGetEnvelopes(data.series.get(i).sequence, 2, ub2[i], lb2[i]);
@@ -621,14 +623,14 @@ public class TSTester {
 			
 			switch (sort) {
 			case unsorted:
-				do1NNunsorted(bound, k, train, test, w, winPercent, timesStream, timeStdStream, accuracyStream, prunedStream, uetest, letest, stats);
+				do1NNunsorted(bound, k, train, test, w, winPercent, timesStream, timeStdStream, accuracyStream, prunedStream, uetest, letest, luetest, uletest, stats);
 				break;
 			case shuffled:
 				train.shuffle(t);
-				do1NNunsorted(bound, k, train, test, w, winPercent, timesStream, timeStdStream, accuracyStream, prunedStream, uetest, letest, stats);
+				do1NNunsorted(bound, k, train, test, w, winPercent, timesStream, timeStdStream, accuracyStream, prunedStream, uetest, letest, luetest, uletest, stats);
 				break;
 			case sorted:
-				do1NNsorted(bound, k, train, test, w, winPercent, timesStream, timeStdStream, accuracyStream, prunedStream, uetest, letest, stats);
+				do1NNsorted(bound, k, train, test, w, winPercent, timesStream, timeStdStream, accuracyStream, prunedStream, uetest, letest, luetest, uletest, stats);
 				break;
 			}
 
