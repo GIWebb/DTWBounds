@@ -38,7 +38,7 @@ java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhance
 # accuracy-*.csv will list the accuracy. This should be the same for every bound
 # pruned-*.csv will list the number of series that were pruned
 # times-*.csv will list the average time in milliseconds to classify the test set
-# time-*.csv will ist the variance in the time over the ten runs
+# time-dev-*.csv will list the standard deviation in the time over the ten runs
 java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhanced1,enhanced2,enhanced3,enhanced4,enhanced5,enhanced6,enhanced7,enhanced8,enhanced9,enhanced10,enhanced11,enhanced12,enhanced13,enhanced14,enhanced15,enhanced16,enhancedwebb0,enhancedwebb3 -W -s
 
 # unsorted optimal windows
@@ -51,7 +51,7 @@ java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhance
 # accuracy-*.csv will list the accuracy. This should be the same for every bound
 # pruned-*.csv will list the number of series that were pruned
 # times-*.csv will list the average time in milliseconds to classify the test set
-# time-*.csv will ist the variance in the time over the ten runs
+# time-dev-*.csv will list the standard deviation in the time over the ten runs
 java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhanced1,enhanced2,enhanced3,enhanced4,enhanced5,enhanced6,enhanced7,enhanced8,enhanced9,enhanced10,enhanced11,enhanced12,enhanced13,enhanced14,enhanced15,enhanced16,enhancedwebb0,enhancedwebb3 -W
 
 # sorted 1% windows
@@ -65,7 +65,7 @@ java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhance
 # accuracy-*.csv will list the accuracy. This should be the same for every bound
 # pruned-*.csv will list the number of series that were pruned
 # times-*.csv will list the average time in milliseconds to classify the test set
-# time-*.csv will ist the variance in the time over the ten runs
+# time-dev-*.csv will list the standard deviation in the time over the ten runs
 java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhanced1,enhanced2,enhanced3,enhanced4,enhanced5,enhanced6,enhanced7,enhanced8,enhanced9,enhanced10,enhanced11,enhanced12,enhanced13,enhanced14,enhanced15,enhanced16,enhancedwebb0,enhancedwebb3 -W -s -g1
 
 # sorted 10% windows
@@ -79,7 +79,7 @@ java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhance
 # accuracy-*.csv will list the accuracy. This should be the same for every bound
 # pruned-*.csv will list the number of series that were pruned
 # times-*.csv will list the average time in milliseconds to classify the test set
-# time-*.csv will ist the variance in the time over the ten runs
+# time-dev-*.csv will list the standard deviation in the time over the ten runs
 java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhanced1,enhanced2,enhanced3,enhanced4,enhanced5,enhanced6,enhanced7,enhanced8,enhanced9,enhanced10,enhanced11,enhanced12,enhanced13,enhanced14,enhanced15,enhanced16,enhancedwebb0,enhancedwebb3 -W -s -g10
 
 # sorted 20% windows
@@ -93,5 +93,5 @@ java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhance
 # accuracy-*.csv will list the accuracy. This should be the same for every bound
 # pruned-*.csv will list the number of series that were pruned
 # times-*.csv will list the average time in milliseconds to classify the test set
-# time-*.csv will ist the variance in the time over the ten runs
+# time-dev-*.csv will list the standard deviation in the time over the ten runs
 java -cp DTWBounds/src TSTester.TSTester -bkeogh,improved,petitjean,webb,enhanced1,enhanced2,enhanced3,enhanced4,enhanced5,enhanced6,enhanced7,enhanced8,enhanced9,enhanced10,enhanced11,enhanced12,enhanced13,enhanced14,enhanced15,enhanced16,enhancedwebb0,enhancedwebb3 -W -s -g20

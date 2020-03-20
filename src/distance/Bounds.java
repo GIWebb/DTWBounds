@@ -510,8 +510,9 @@ public class Bounds {
 		return lb;
 	}
 	
-
-	public static double lbWebb(double q[], double uq[], double lq[], double t[], double ut[], double lt[], double lut[], double ult[], int window, double bsf) {
+	// version that merges the two main loops and does away with the arrays storing intermediate values
+	// further refinement of data to query distance computations
+	public static double lbWebb(double q[], double uq[], double lq[], double luq[], double ulq[], double t[], double ut[], double lt[], double lut[], double ult[], int window, double bsf) {
 		double lb = 0;
 		int istart = 0;
 		
@@ -593,70 +594,103 @@ public class Bounds {
 			istart = 3;
 		}
 		
-		int freeCount = window;
+		int freeCountAbove = window;
+		int freeCountBelow = window;
 
-	 	// isFree will be true if no q within the window has been included in lbKeogh
-		if (isFree == null) {
-			isFree = new boolean[Math.max(q.length,defaultAllocSize)];
-		}
-		else if (isFree.length < q.length) {
-			isFree = new boolean[q.length];
-		}
-		else {
-			 java.util.Arrays.fill(isFree, false);
-		}
-		
 		int qEnd = q.length-istart;
 
 		// lbKeogh
 		for (int i = istart; i < qEnd && lb <= bsf; i++) {
-				double qi = q[i];
-				if (qi>ut[i]) {
-					lb += dist(qi, ut[i]);
-					freeCount = 0;
-					//if (i>= window) isFree[i-window] = false;
-				}
-				else if (qi < lt[i]) {
-					lb += dist(qi,  lt[i]);
-					freeCount = 0;
-					//if (i>= window) isFree[i-window] = false;
+			double qi = q[i];
+			
+			if (qi>ut[i]) {
+				lb += dist(qi, ut[i]);
+				if (ut[i]>=ulq[i]) {
+					freeCountBelow++;
 				}
 				else {
-					freeCount++;
-		
-					// update freeCount
-					if (freeCount > 2*window) isFree[i-window] = true;
-					//else if (i>= window) isFree[i-window] = false;
+					freeCountBelow = 0;
 				}
-
-		}
-		
-		for (int i = qEnd - freeCount + window; i < qEnd; i++) {
-			isFree[i] = true;
-		}
-
-	
-		// now add distance from t to q
-		for (int i = istart; i < qEnd && lb <= bsf; i++) {
-			if (isFree[i]){
-				if (t[i] > uq[i]) {
-					lb += dist(t[i], uq[i]);
+				
+				freeCountAbove = 0;
+			}
+			else if (qi < lt[i]) {
+				lb += dist(qi,  lt[i]);
+				if (lt[i]<=luq[i]) {
+					freeCountAbove++;
 				}
 				else {
-					if (t[i] < lq[i]) {
-						lb += dist(t[i], lq[i]);
+					freeCountAbove = 0;
+				}
+				
+				freeCountBelow = 0;
+			}
+			else {
+				freeCountAbove++;
+				freeCountBelow++;
+			}
+			
+			if (i >= window + istart) {
+				// add distance from t to q
+				int j = i - window;
+				
+				double tj = t[j];
+				double uqj = uq[j];
+				if (tj > uqj) {
+					if (freeCountAbove > 2*window) {
+						lb += dist(tj, uqj);
 					}
-				} 
-			} else {
-				if (ult[i] >= uq[i]) {
-					if (t[i]>ult[i]) {
-						lb += dist(t[i], uq[i]) - dist(ult[i], uq[i]);
+					else {
+						double ultj = ult[j];
+						if (tj > ultj && ultj >= uqj) {
+							lb += dist(tj, uqj) - dist(ultj, uqj);
+						}
 					}
 				}
 				else {
-					if (t[i] < lut[i]) {
-						if (lut[i] <= lq[i]) {
-							lb += dist(t[i],  lq[i]) - dist(lut[i], lq[i]);
+					double lqj = lq[j];
+					if (tj < lqj) {
+						if (freeCountBelow > 2*window) {
+							lb += dist(tj, lqj);
+						}
+						else {
+							double lutj = lut[j];
+							if (tj < lutj && lutj <= lqj) {
+								lb += dist(tj, lqj) - dist(lutj, lqj);
+							}
+						}
+					}
+				}
+			}
+		}
+
+
+		for (int j = qEnd - window; j < qEnd && lb <= bsf; j++) {
+			// add distance from t to q for the last window's worth of positions
+			
+			double tj = t[j];
+			double uqj = uq[j];
+			if (tj > uqj) {
+				if (j >= qEnd-freeCountAbove+window) {
+					lb += dist(tj, uqj);
+				}
+				else {
+					double ultj = ult[j];
+					if (tj > ultj && ultj >= uqj) {
+						lb += dist(tj, uqj) - dist(ultj, uqj);
+					}
+				}
+			}
+			else {
+				double lqj = lq[j];
+				if (tj < lqj) {
+					if (j >= qEnd-freeCountBelow+window) {
+						lb += dist(tj, lqj);
+					}
+					else {
+						double lutj = lut[j];
+						if (tj < lutj && lutj <= lqj) {
+							lb += dist(tj, lqj) - dist(lutj, lqj);
 						}
 					}
 				}
@@ -666,7 +700,8 @@ public class Bounds {
 		return lb;
 	}
 
-	public static double enhancedLBWebb(double q[], double uq[], double lq[], double t[], double ut[], double lt[], double lut[], double ult[], int k, int window, double bsf) {
+
+	public static double enhancedLBWebb(double q[], double uq[], double lq[], double luq[], double ulq[], double t[], double ut[], double lt[], double lut[], double ult[], int k, int window, double bsf) {
 		double lb = 0.0;
 		
 		if (k > q.length/2) k = q.length/2;
@@ -717,70 +752,103 @@ public class Bounds {
 		
 		int istart = k;
 		
-		int freeCount = window;
+		int freeCountAbove = window;
+		int freeCountBelow = window;
 
-	 	// isFree will be true if no q within the window has been included in lbKeogh
-		if (isFree == null) {
-			isFree = new boolean[Math.max(q.length,defaultAllocSize)];
-		}
-		else if (isFree.length < q.length) {
-			isFree = new boolean[q.length];
-		}
-		else {
-			 java.util.Arrays.fill(isFree, false);
-		}
-		
 		int qEnd = q.length-istart;
 
 		// lbKeogh
 		for (int i = istart; i < qEnd && lb <= bsf; i++) {
-				double qi = q[i];
-				if (qi>ut[i]) {
-					lb += dist(qi, ut[i]);
-					freeCount = 0;
-					//if (i>= window) isFree[i-window] = false;
-				}
-				else if (qi < lt[i]) {
-					lb += dist(qi,  lt[i]);
-					freeCount = 0;
-					//if (i>= window) isFree[i-window] = false;
+			double qi = q[i];
+			
+			if (qi>ut[i]) {
+				lb += dist(qi, ut[i]);
+				if (ut[i]>=ulq[i]) {
+					freeCountBelow++;
 				}
 				else {
-					freeCount++;
-		
-					// update freeCount
-					if (freeCount > 2*window) isFree[i-window] = true;
-					//else if (i>= window) isFree[i-window] = false;
+					freeCountBelow = 0;
 				}
-
-		}
-		
-		for (int i = qEnd - freeCount + window; i < qEnd; i++) {
-			isFree[i] = true;
-		}
-
-	
-		// now add distance from t to q
-		for (int i = istart; i < qEnd && lb <= bsf; i++) {
-			if (isFree[i]){
-				if (t[i] > uq[i]) {
-					lb += dist(t[i], uq[i]);
+				
+				freeCountAbove = 0;
+			}
+			else if (qi < lt[i]) {
+				lb += dist(qi,  lt[i]);
+				if (lt[i]<=luq[i]) {
+					freeCountAbove++;
 				}
 				else {
-					if (t[i] < lq[i]) {
-						lb += dist(t[i], lq[i]);
+					freeCountAbove = 0;
+				}
+				
+				freeCountBelow = 0;
+			}
+			else {
+				freeCountAbove++;
+				freeCountBelow++;
+			}
+			
+			if (i >= window + istart) {
+				// add distance from t to q
+				int j = i - window;
+				
+				double tj = t[j];
+				double uqj = uq[j];
+				if (tj > uqj) {
+					if (freeCountAbove > 2*window) {
+						lb += dist(tj, uqj);
 					}
-				} 
-			} else {
-				if (ult[i] >= uq[i]) {
-					if (t[i]>ult[i]) {
-						lb += dist(t[i], uq[i]) - dist(ult[i], uq[i]);
+					else {
+						double ultj = ult[j];
+						if (tj > ultj && ultj >= uqj) {
+							lb += dist(tj, uqj) - dist(ultj, uqj);
+						}
 					}
 				}
 				else {
-					if (t[i] < lut[i]) {
-						if (lut[i] <= lq[i]) {
-							lb += dist(t[i],  lq[i]) - dist(lut[i], lq[i]);
+					double lqj = lq[j];
+					if (tj < lqj) {
+						if (freeCountBelow > 2*window) {
+							lb += dist(tj, lqj);
+						}
+						else {
+							double lutj = lut[j];
+							if (tj < lutj && lutj <= lqj) {
+								lb += dist(tj, lqj) - dist(lutj, lqj);
+							}
+						}
+					}
+				}
+			}
+		}
+
+
+		for (int j = qEnd - window; j < qEnd && lb <= bsf; j++) {
+			// add distance from t to q for the last window's worth of positions
+			
+			double tj = t[j];
+			double uqj = uq[j];
+			if (tj > uqj) {
+				if (j >= qEnd-freeCountAbove+window) {
+					lb += dist(tj, uqj);
+				}
+				else {
+					double ultj = ult[j];
+					if (tj > ultj && ultj >= uqj) {
+						lb += dist(tj, uqj) - dist(ultj, uqj);
+					}
+				}
+			}
+			else {
+				double lqj = lq[j];
+				if (tj < lqj) {
+					if (j >= qEnd-freeCountBelow+window) {
+						lb += dist(tj, lqj);
+					}
+					else {
+						double lutj = lut[j];
+						if (tj < lutj && lutj <= lqj) {
+							lb += dist(tj, lqj) - dist(lutj, lqj);
 						}
 					}
 				}
@@ -791,100 +859,257 @@ public class Bounds {
 	}
 
 	// Fast approximation to lbWebb using only free zone
-	public static double lbBWebbOnlyFreeZone(double q[], double uq[], double lq[], double t[], double ut[], double lt[], int window, double bsf) {
-		double lb = 0.0;
-		int freeCount = window;
+	public static double lbBWebbOnlyFreeZone(double q[], double uq[], double lq[], double luq[], double ulq[], double t[], double ut[], double lt[], double lut[], double ult[], int window, double bsf) {
+		double lb = 0;
+		int istart = 0;
 		
-	 	// isFree will be true if no q within the window has been included in lbKeogh
-		if (isFree == null) {
-			isFree = new boolean[defaultAllocSize];
-		}
-		else if (isFree.length < q.length) {
-			isFree = new boolean[q.length];
-		}
-		
-		// lbKeogh
-		for (int i = 0; i < q.length && lb <= bsf; i++) {
-			double qi = q[i];
-			if (qi>ut[i]) {
-				lb += dist(qi, ut[i]);
-				freeCount = 0;
-			}
-			else if (qi < lt[i]) {
-				lb += dist(qi,  lt[i]);
-				freeCount = 0;
+		if (window >= 1 && q.length >= 6) {
+			// the path through the first, second and third alignments
+			// the seven possible paths are
+			//	00, 01, 02
+			//	00, 01, 12
+			//	00, 11, 12
+			//	00, 11, 22
+			//	00, 11, 21
+			//	00, 10, 21
+			//	00, 10, 20
+			double q0 = q[0];
+			double t0 = t[0];
+			double qe0 = q[q.length-1];
+			double te0 = t[t.length-1];
+			double q1 = q[1];
+			double t1 = t[1];
+			double t2 = t[2];
+			double q2 = q[2];
+			
+			double d01 = dist(q0, t1);
+			double d11 = dist(q1, t1);
+			double d10 = dist(q1,t0);
+			
+			if (window == 1) {
+				lb = dist(q0, t0)+
+						Math.min(
+								d11 + dist(q2, t2),
+								Math.min(
+										Math.min(d01, d11) + dist(q1, t2),
+										Math.min(d10, d11) + dist(q2, t1)));
 			}
 			else {
-				freeCount++;
+				lb = dist(q0, t0)+
+					Math.min(
+							d11 + dist(q2, t2),
+							Math.min(
+									Math.min(d01 + dist(q0, t2),
+											 Math.min(d01, d11) + dist(q1, t2)),
+									Math.min(d10 + dist(q2, t0),
+											 Math.min(d10, d11) + dist(q2, t1))));
 			}
-
-			// update freeCount
-			if (freeCount > 2*window) isFree[i-window] = true;
-			else if (i>= window) isFree[i-window] = false;
-		}
-		
-		// fix isFree for the end
-		for (int i = Math.max(0, q.length - window); i < Math.min(q.length - freeCount + window, q.length); i++) {
-			isFree[i] = false;
-		}
-		
-		for (int i = q.length - freeCount + window; i < q.length; i++) {
-			isFree[i] = true;
-		}
-		
-		// now add distance from t to q
-		for (int i = 0; i < t.length && lb <= bsf; i++) {
-			double ti = t[i];
-			if (isFree[i]){
-				if (ti < lq[i]) {
-					lb += dist(ti, lq[i]);
-				}
-				else if (ti > uq[i]) {
-					lb += dist(ti, uq[i]);
-				}
-			}
-		}
-		
-		return lb;
-	}
-
-	// lb webb without tracking whether all q within the window have been within t's envelope
-	public static double fastLBWNoFreeZone(double q[], double uq[], double lq[], double t[], double ut[], double lt[], double lut[], double ult[], int window, double bsf, boolean doKeogh) {
-		double lb = 0.0;
-		
-		if (doKeogh) {
-			// lbKeogh
-			for (int i = 0; i < q.length && lb <= bsf; i++) {
-				double qi = q[i];
-				if (qi>ut[i]) {
-					lb += dist(qi, ut[i]);
-				}
-				else if (qi < lt[i]) {
-					lb += dist(qi,  lt[i]);
-				}
-			}
-		}
-		
-		// now add distance from t to q
-		for (int i = 0; i < t.length && lb <= bsf; i++) {
-			double ti = t[i];
-			if (ti>ult[i] && ult[i] >= uq[i]) {
-				lb += dist(ti, uq[i]) - dist(ult[i], uq[i]);
-			}
-			else if (ti < lut[i] && lut[i] <= lq[i]) {
-				lb += dist(ti,  lq[i]) - dist(lut[i], lq[i]);
-			}
-		}
-		
-		return lb;
-	}
+			
+			if (lb > bsf) return lb;
 	
-	// lb webb without tracking whether all q within the window have been within t's envelope
-	public static double lbWNoFreeZoneAux(double q[], double uq[], double lq[], double t[], double ut[], double lt[], double lut[], double ult[], int k, int window, double lb, double bsf) {
-		if (2 * k > q.length) k = q.length/2;
+			// the path through the last alignments
+			q1 = q[q.length-2];
+			t1 = t[t.length-2];
+			t2 = t[t.length-3];
+			q2 = q[q.length-3];
+			
+			d01 = dist(qe0, t1);
+			d11 = dist(q1, t1);
+			d10 = dist(q1,te0);
+			
+			if (window == 1) {
+				lb += dist(qe0, te0)+
+						Math.min(
+								d11 + dist(q2, t2),
+								Math.min(
+										Math.min(d01, d11) + dist(q1, t2),
+										Math.min(d10, d11) + dist(q2, t1)));
+			}
+			else {
+				lb += dist(qe0, te0)+
+						Math.min(
+								d11 + dist(q2, t2),
+								Math.min(
+										Math.min(d01 + dist(qe0, t2),
+												 Math.min(d01, d11) + dist(q1, t2)),
+										Math.min(d10 + dist(q2, te0),
+												 Math.min(d10, d11) + dist(q2, t1))));
+			}
+
+			if (lb > bsf) return lb;
+			
+			istart = 3;
+		}
 		
+		int freeCountAbove = window;
+		int freeCountBelow = window;
+
+		int qEnd = q.length-istart;
+
 		// lbKeogh
-		for (int i = k; i < q.length-k && lb <= bsf; i++) {
+		for (int i = istart; i < qEnd && lb <= bsf; i++) {
+			double qi = q[i];
+			
+			if (qi>ut[i]) {
+				lb += dist(qi, ut[i]);
+				if (ut[i]>=ulq[i]) {
+					freeCountBelow++;
+				}
+				else {
+					freeCountBelow = 0;
+				}
+				
+				freeCountAbove = 0;
+			}
+			else if (qi < lt[i]) {
+				lb += dist(qi,  lt[i]);
+				if (lt[i]<=luq[i]) {
+					freeCountAbove++;
+				}
+				else {
+					freeCountAbove = 0;
+				}
+				
+				freeCountBelow = 0;
+			}
+			else {
+				freeCountAbove++;
+				freeCountBelow++;
+			}
+			
+			if (i >= window + istart) {
+				// add distance from t to q
+				int j = i - window;
+				
+				double tj = t[j];
+				double uqj = uq[j];
+				if (tj > uqj) {
+					if (freeCountAbove > 2*window) {
+						lb += dist(tj, uqj);
+					}
+				}
+				else {
+					double lqj = lq[j];
+					if (tj < lqj) {
+						if (freeCountBelow > 2*window) {
+							lb += dist(tj, lqj);
+						}
+					}
+				}
+			}
+		}
+
+
+		for (int j = qEnd - window; j < qEnd && lb <= bsf; j++) {
+			// add distance from t to q for the last window's worth of positions
+			
+			double tj = t[j];
+			double uqj = uq[j];
+			if (tj > uqj) {
+				if (j >= qEnd-freeCountAbove+window) {
+					lb += dist(tj, uqj);
+				}
+			}
+			else {
+				double lqj = lq[j];
+				if (tj < lqj) {
+					if (j >= qEnd-freeCountBelow+window) {
+						lb += dist(tj, lqj);
+					}
+				}
+			}
+		}
+		
+		return lb;
+	}
+
+	// lb webb without tracking whether free
+	public static double fastLBWNoFreeZone(double q[], double uq[], double lq[], double t[], double ut[], double lt[], double lut[], double ult[], int window, double bsf) {
+		double lb = 0;
+		int istart = 0;
+		
+		if (window >= 1 && q.length >= 6) {
+			// the path through the first, second and third alignments
+			// the seven possible paths are
+			//	00, 01, 02
+			//	00, 01, 12
+			//	00, 11, 12
+			//	00, 11, 22
+			//	00, 11, 21
+			//	00, 10, 21
+			//	00, 10, 20
+			double q0 = q[0];
+			double t0 = t[0];
+			double qe0 = q[q.length-1];
+			double te0 = t[t.length-1];
+			double q1 = q[1];
+			double t1 = t[1];
+			double t2 = t[2];
+			double q2 = q[2];
+			
+			double d01 = dist(q0, t1);
+			double d11 = dist(q1, t1);
+			double d10 = dist(q1,t0);
+			
+			if (window == 1) {
+				lb = dist(q0, t0)+
+						Math.min(
+								d11 + dist(q2, t2),
+								Math.min(
+										Math.min(d01, d11) + dist(q1, t2),
+										Math.min(d10, d11) + dist(q2, t1)));
+			}
+			else {
+				lb = dist(q0, t0)+
+					Math.min(
+							d11 + dist(q2, t2),
+							Math.min(
+									Math.min(d01 + dist(q0, t2),
+											 Math.min(d01, d11) + dist(q1, t2)),
+									Math.min(d10 + dist(q2, t0),
+											 Math.min(d10, d11) + dist(q2, t1))));
+			}
+			
+			if (lb > bsf) return lb;
+	
+			// the path through the last alignments
+			q1 = q[q.length-2];
+			t1 = t[t.length-2];
+			t2 = t[t.length-3];
+			q2 = q[q.length-3];
+			
+			d01 = dist(qe0, t1);
+			d11 = dist(q1, t1);
+			d10 = dist(q1,te0);
+			
+			if (window == 1) {
+				lb += dist(qe0, te0)+
+						Math.min(
+								d11 + dist(q2, t2),
+								Math.min(
+										Math.min(d01, d11) + dist(q1, t2),
+										Math.min(d10, d11) + dist(q2, t1)));
+			}
+			else {
+				lb += dist(qe0, te0)+
+						Math.min(
+								d11 + dist(q2, t2),
+								Math.min(
+										Math.min(d01 + dist(qe0, t2),
+												 Math.min(d01, d11) + dist(q1, t2)),
+										Math.min(d10 + dist(q2, te0),
+												 Math.min(d10, d11) + dist(q2, t1))));
+			}
+
+			if (lb > bsf) return lb;
+			
+			istart = 3;
+		}
+
+		int qEnd = q.length-istart;
+		
+		for (int i = istart; i < qEnd && lb <= bsf; i++) {
+			// lbKeogh
 			double qi = q[i];
 			if (qi>ut[i]) {
 				lb += dist(qi, ut[i]);
@@ -892,10 +1117,8 @@ public class Bounds {
 			else if (qi < lt[i]) {
 				lb += dist(qi,  lt[i]);
 			}
-		}
-		
-		// now add distance from t to q
-		for (int i = k; i < t.length-k && lb <= bsf; i++) {
+
+			// now add distance from t to q
 			double ti = t[i];
 			if (ti>ult[i] && ult[i] >= uq[i]) {
 				lb += dist(ti, uq[i]) - dist(ult[i], uq[i]);

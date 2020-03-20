@@ -397,34 +397,34 @@ public class TSTester {
 	
 	static void testNN(File baseDir, File outDir, String suffix, String datasets[], boundInfo bounds[], int w, boolean winPercent, experimentType sort, String datasetDirectory) {
 		FileWriter timesStream = null;
-		FileWriter timeVarStream = null;
+		FileWriter timeStdStream = null;
 		FileWriter accuracyStream = null;
 		FileWriter prunedStream = null;
 		
 		try {
 			timesStream = new FileWriter(baseDir.getName() + Utils.OSUtils.directorySep() +outDir.getName() + Utils.OSUtils.directorySep() + "times-" + suffix);
-			timeVarStream = new FileWriter(baseDir.getName() + Utils.OSUtils.directorySep() +outDir.getName() + Utils.OSUtils.directorySep() + "time-var-" + suffix);
+			timeStdStream = new FileWriter(baseDir.getName() + Utils.OSUtils.directorySep() +outDir.getName() + Utils.OSUtils.directorySep() + "time-dev-" + suffix);
 			accuracyStream = new FileWriter(baseDir.getName() + Utils.OSUtils.directorySep() +outDir.getName() + Utils.OSUtils.directorySep() + "accuracy-" + suffix);
 			prunedStream = new FileWriter(baseDir.getName() + Utils.OSUtils.directorySep() +outDir.getName() + Utils.OSUtils.directorySep() + "pruned-" + suffix);
 
 			if (datasets == null) {
 				for (int i = 0; i < bounds.length; i++) {
-					runNN(bounds[i].bound, bounds[i].k, w, winPercent, sort, timesStream, timeVarStream, accuracyStream, prunedStream, datasetDirectory);
+					runNN(bounds[i].bound, bounds[i].k, w, winPercent, sort, timesStream, timeStdStream, accuracyStream, prunedStream, datasetDirectory);
 				}
 			}
 			else {
 				for (String d: datasets) {
 					timesStream.write(d);
-					timeVarStream.write(d);
+					timeStdStream.write(d);
 					accuracyStream.write(d);
 					prunedStream.write(d);
 					
 					for (int i = 0; i < bounds.length; i++) {
-						runNNd(bounds[i].bound, bounds[i].k,  w, winPercent, d, sort, timesStream, timeVarStream, accuracyStream, prunedStream, datasetDirectory);
+						runNNd(bounds[i].bound, bounds[i].k,  w, winPercent, d, sort, timesStream, timeStdStream, accuracyStream, prunedStream, datasetDirectory);
 					}
 
 					timesStream.write("\n");
-					timeVarStream.write("\n");
+					timeStdStream.write("\n");
 					accuracyStream.write("\n");
 					prunedStream.write("\n");
 				}
@@ -438,9 +438,9 @@ public class TSTester {
 					timesStream.close();
 					timesStream = null;
 				}
-				if (timeVarStream != null) {
-					timeVarStream.close();
-					timeVarStream = null;
+				if (timeStdStream != null) {
+					timeStdStream.close();
+					timeStdStream = null;
 				}
 				if (accuracyStream != null) {
 					accuracyStream.close();
@@ -458,7 +458,7 @@ public class TSTester {
 	}
 	
 	// runNN for a specified single dataset
-	static void runNNd(distance.BoundsID bound, int k, int w, boolean winPercent, String dataset, experimentType sort, FileWriter timesStream, FileWriter timeVarStream, FileWriter accuracyStream, FileWriter prunedStream, String datasetDirectory){
+	static void runNNd(distance.BoundsID bound, int k, int w, boolean winPercent, String dataset, experimentType sort, FileWriter timesStream, FileWriter timeStdStream, FileWriter accuracyStream, FileWriter prunedStream, String datasetDirectory){
 		FileIterator files = new FileIterator(verbosity, datasetDirectory);
 		File trainFile = null;
 		File testFile = null;
@@ -496,19 +496,19 @@ public class TSTester {
 			thisW = Utils.UCRInfo.getWindow(files.getName());
 		}
 
-		doNN(bound, k, train, test, thisW, winPercent, sort, timesStream, timeVarStream, accuracyStream, prunedStream);
+		doNN(bound, k, train, test, thisW, winPercent, sort, timesStream, timeStdStream, accuracyStream, prunedStream);
 		
 		// flush the output files in case the process times out before all bounds are completed
 		try {
 			timesStream.flush();
-			timeVarStream.flush();
+			timeStdStream.flush();
 			accuracyStream.flush();
 			prunedStream.flush();
 		} catch (IOException e) {
 		}
 	}
 	
-	static void runNN(distance.BoundsID bound, int k, int w, boolean winPercent, experimentType sort, FileWriter timesStream, FileWriter timeVarStream, FileWriter accuracyStream, FileWriter prunedStream, String datasetDirectory){
+	static void runNN(distance.BoundsID bound, int k, int w, boolean winPercent, experimentType sort, FileWriter timesStream, FileWriter timeStdStream, FileWriter accuracyStream, FileWriter prunedStream, String datasetDirectory){
 		FileIterator files = new FileIterator(verbosity, datasetDirectory);
 		File trainFile = null;
 		File testFile = null;
@@ -521,7 +521,7 @@ public class TSTester {
 			}
 			
 			timesStream.write(boundDesc);
-			timeVarStream.write(boundDesc);
+			timeStdStream.write(boundDesc);
 			accuracyStream.write(boundDesc);
 			prunedStream.write(boundDesc);
 
@@ -553,7 +553,7 @@ public class TSTester {
 					thisW = Utils.UCRInfo.getWindow(files.getName());
 				}
 				
-				doNN(bound, k, train, test, thisW, winPercent, sort, timesStream, timeVarStream, accuracyStream, prunedStream);
+				doNN(bound, k, train, test, thisW, winPercent, sort, timesStream, timeStdStream, accuracyStream, prunedStream);
 	
 				files.getNext();
 				if (w == -2) {
@@ -566,7 +566,7 @@ public class TSTester {
 			}
 
 			timesStream.write("\n");
-			timeVarStream.write("\n");
+			timeStdStream.write("\n");
 			accuracyStream.write("\n");
 			prunedStream.write("\n");
 		} catch (IOException e) {
@@ -582,7 +582,7 @@ public class TSTester {
 		public int prepruned = 0;
 	}
 	
-	static void doNN(distance.BoundsID bound, int k, Dataset train, Dataset test, int w, boolean winPercent, experimentType sort, FileWriter timesStream, FileWriter timeVarStream, FileWriter accuracyStream, FileWriter prunedStream){
+	static void doNN(distance.BoundsID bound, int k, Dataset train, Dataset test, int w, boolean winPercent, experimentType sort, FileWriter timesStream, FileWriter timeStdStream, FileWriter accuracyStream, FileWriter prunedStream){
 		double uetest[] = null;
 		double letest[] = null;
 		//lb2[i] = new double[data.series.get(i).sequence.length];
@@ -621,14 +621,14 @@ public class TSTester {
 			
 			switch (sort) {
 			case unsorted:
-				do1NNunsorted(bound, k, train, test, w, winPercent, timesStream, timeVarStream, accuracyStream, prunedStream, uetest, letest, stats);
+				do1NNunsorted(bound, k, train, test, w, winPercent, timesStream, timeStdStream, accuracyStream, prunedStream, uetest, letest, stats);
 				break;
 			case shuffled:
 				train.shuffle(t);
-				do1NNunsorted(bound, k, train, test, w, winPercent, timesStream, timeVarStream, accuracyStream, prunedStream, uetest, letest, stats);
+				do1NNunsorted(bound, k, train, test, w, winPercent, timesStream, timeStdStream, accuracyStream, prunedStream, uetest, letest, stats);
 				break;
 			case sorted:
-				do1NNsorted(bound, k, train, test, w, winPercent, timesStream, timeVarStream, accuracyStream, prunedStream, uetest, letest, stats);
+				do1NNsorted(bound, k, train, test, w, winPercent, timesStream, timeStdStream, accuracyStream, prunedStream, uetest, letest, stats);
 				break;
 			}
 
@@ -642,7 +642,7 @@ public class TSTester {
 		
 		try {
 			timesStream.write(","+meanTime);
-			timeVarStream.write(","+Math.sqrt(varianceTime/10.0));
+			timeStdStream.write(","+Math.sqrt(varianceTime/10.0));
 			accuracyStream.write(","+(stats.correct/(double)(stats.correct+stats.errors)));
 			prunedStream.write(","+stats.pruned);
 		} catch (IOException e) {
@@ -652,9 +652,11 @@ public class TSTester {
 	}
 	
 	private static void do1NNunsorted (
-			distance.BoundsID bound, int k, Dataset train, Dataset test, int w, boolean winPercent, FileWriter timesStream, FileWriter timeVarStream, FileWriter accuracyStream, FileWriter prunedStream,
+			distance.BoundsID bound, int k, Dataset train, Dataset test, int w, boolean winPercent, FileWriter timesStream, FileWriter timeStdStream, FileWriter accuracyStream, FileWriter prunedStream,
 			double uetest[],
 			double letest[],
+			double luetest[],
+			double uletest[],
 			statistics stats
 			) {
 		
@@ -678,6 +680,18 @@ public class TSTester {
 				else thisW = w;
 				if (debug) distance.Bounds.simpleGetEnvelopes(testSeries.sequence, thisW, uetest, letest);
 				else distance.Bounds.lemireGetEnvelopes(testSeries.sequence, thisW, uetest, letest);
+				if (bound == distance.BoundsID.Webb || bound == distance.BoundsID.EnhancedWebb) {
+					if (luetest == null) {
+						luetest = new double[l];
+						uletest = new double[l];
+					}
+					else if (luetest.length < l) {
+						luetest = new double[l];
+						uletest = new double[l];
+					}
+					distance.Bounds.lemireGetUpper(letest, thisW, uletest);
+					distance.Bounds.lemireGetLower(uetest, thisW, luetest);
+				}
 			}
 
 			for (int j = 0; j < train.series.size(); j++) {
@@ -715,11 +729,11 @@ public class TSTester {
 						break;
 
 					case Webb:
-						thisBound = distance.Bounds.lbWebb(testSeries.sequence, uetest, letest, trainSeries.sequence, trainSeries.upper, trainSeries.lower, trainSeries.lowerUpper, trainSeries.upperLower, thisW, nearestD);
+						thisBound = distance.Bounds.lbWebb(testSeries.sequence, uetest, letest, luetest, uletest, trainSeries.sequence, trainSeries.upper, trainSeries.lower, trainSeries.lowerUpper, trainSeries.upperLower, thisW, nearestD);
 						break;
 
 					case EnhancedWebb:
-						thisBound = distance.Bounds.enhancedLBWebb(testSeries.sequence, uetest, letest, trainSeries.sequence, trainSeries.upper, trainSeries.lower, trainSeries.lowerUpper, trainSeries.upperLower, k, thisW, nearestD);
+						thisBound = distance.Bounds.enhancedLBWebb(testSeries.sequence, uetest, letest, luetest, uletest, trainSeries.sequence, trainSeries.upper, trainSeries.lower, trainSeries.lowerUpper, trainSeries.upperLower, k, thisW, nearestD);
 						break;
 						
 					default:
@@ -759,9 +773,11 @@ public class TSTester {
 	}
 	
 	private static void do1NNsorted (
-			distance.BoundsID bound, int k, Dataset train, Dataset test, int w, boolean winPercent, FileWriter timesStream, FileWriter timeVarStream, FileWriter accuracyStream, FileWriter prunedStream,
+			distance.BoundsID bound, int k, Dataset train, Dataset test, int w, boolean winPercent, FileWriter timesStream, FileWriter timeStdStream, FileWriter accuracyStream, FileWriter prunedStream,
 			double uetest[],
 			double letest[],
+			double luetest[],
+			double uletest[],
 			statistics stats
 			) {
 
@@ -784,6 +800,18 @@ public class TSTester {
 				}
 				if (debug) distance.Bounds.simpleGetEnvelopes(testSeries.sequence, thisW, uetest, letest);
 				else distance.Bounds.lemireGetEnvelopes(testSeries.sequence, thisW, uetest, letest);
+				if (bound == distance.BoundsID.Webb || bound == distance.BoundsID.EnhancedWebb) {
+					if (luetest == null) {
+						luetest = new double[l];
+						uletest = new double[l];
+					}
+					else if (luetest.length < l) {
+						luetest = new double[l];
+						uletest = new double[l];
+					}
+					distance.Bounds.lemireGetUpper(letest, thisW, uletest);
+					distance.Bounds.lemireGetLower(uetest, thisW, luetest);
+				}
 			}
 			
 			// sort the data
@@ -814,11 +842,11 @@ public class TSTester {
 					break;
 	
 				case Webb:
-					thisBound = distance.Bounds.lbWebb(testSeries.sequence, uetest, letest, trainSeries.sequence, trainSeries.upper, trainSeries.lower, trainSeries.lowerUpper, trainSeries.upperLower, thisW, Double.MAX_VALUE);
+					thisBound = distance.Bounds.lbWebb(testSeries.sequence, uetest, letest, luetest, uletest, trainSeries.sequence, trainSeries.upper, trainSeries.lower, trainSeries.lowerUpper, trainSeries.upperLower, thisW, Double.MAX_VALUE);
 					break;
 					
 				case EnhancedWebb:
-					thisBound = distance.Bounds.enhancedLBWebb(testSeries.sequence, uetest, letest, trainSeries.sequence, trainSeries.upper, trainSeries.lower, trainSeries.lowerUpper, trainSeries.upperLower, k, thisW, Double.MAX_VALUE);
+					thisBound = distance.Bounds.enhancedLBWebb(testSeries.sequence, uetest, letest, luetest, uletest, trainSeries.sequence, trainSeries.upper, trainSeries.lower, trainSeries.lowerUpper, trainSeries.upperLower, k, thisW, Double.MAX_VALUE);
 					break;
 					
 				default:
@@ -1073,6 +1101,8 @@ public class TSTester {
 	static void doTT(distance.BoundsID bound, int k, Dataset train, Dataset test, int w, boolean winPercent, FileWriter resultStream){
 		double uetest[] = null;
 		double letest[] = null;
+		double luetest[] = null;
+		double uletest[] = null;
 		double avTightness = 0.0;
 		long count = 0;
 		
@@ -1125,6 +1155,18 @@ public class TSTester {
 					distance.Bounds.simpleGetEnvelopes(testSeries.sequence, thisW, uetest, letest);
 				else
 					distance.Bounds.lemireGetEnvelopes(testSeries.sequence, thisW, uetest, letest);
+				if (bound == distance.BoundsID.Webb || bound == distance.BoundsID.EnhancedWebb) {
+					if (luetest == null) {
+						luetest = new double[l];
+						uletest = new double[l];
+					}
+					else if (luetest.length < l) {
+						luetest = new double[l];
+						uletest = new double[l];
+					}
+					distance.Bounds.lemireGetUpper(letest, thisW, uletest);
+					distance.Bounds.lemireGetLower(uetest, thisW, luetest);
+				}
 			}
 
 			for (int j = 0; j < train.series.size(); j++) {
@@ -1163,13 +1205,13 @@ public class TSTester {
 					break;
 
 				case Webb:
-					thisBound = distance.Bounds.lbWebb(testSeries.sequence, uetest, letest,
+					thisBound = distance.Bounds.lbWebb(testSeries.sequence, uetest, letest, luetest, uletest,
 								trainSeries.sequence, trainSeries.upper, trainSeries.lower,
 								trainSeries.lowerUpper, trainSeries.upperLower, thisW, Double.MAX_VALUE);
 					break;
 
 				case EnhancedWebb:
-					thisBound = distance.Bounds.enhancedLBWebb(testSeries.sequence, uetest, letest,
+					thisBound = distance.Bounds.enhancedLBWebb(testSeries.sequence, uetest, letest, luetest, uletest,
 								trainSeries.sequence, trainSeries.upper, trainSeries.lower,
 								trainSeries.lowerUpper, trainSeries.upperLower, k, thisW, Double.MAX_VALUE);
 					break;
