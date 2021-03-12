@@ -1,6 +1,7 @@
 # DTWBounds
 Code to reproduce experiments in Tight lower bounds for Dynamic Time Warping
 Geoffrey I. Webb and Francois Petitjean
+https://arxiv.org/abs/2102.07076
 
 Presents two novel DTW lower bounds: LB_Petitjean and LB_Webb
 
